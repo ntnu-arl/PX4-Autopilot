@@ -212,6 +212,7 @@ set(msg_files
 	TrajectorySetpoint.msg
 	TrajectoryWaypoint.msg
 	TransponderReport.msg
+	TofObstaclesChunk.msg
 	TuneControl.msg
 	UavcanParameterRequest.msg
 	UavcanParameterValue.msg
