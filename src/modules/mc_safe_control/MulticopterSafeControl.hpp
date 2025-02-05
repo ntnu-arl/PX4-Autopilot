@@ -68,6 +68,8 @@
 #include <lib/slew_rate/SlewRate.hpp>
 #include <uORB/topics/offboard_control_mode.h>
 
+#include <containers/Array.hpp>
+
 #include "PDAttitudeControl.hpp"
 #include "PDPositionControl.hpp"
 #include "CBFSafetyFilter.hpp"

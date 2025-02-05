@@ -310,6 +310,7 @@ void MulticopterSafeControl::Run()
     tof_obstacles_chunk_s tof_obstacles_chunk;
     if (_tof_obstacles_chunk_sub.update(&tof_obstacles_chunk))
     {
+      // TODO: should there be a while loop?
       // PX4_INFO("Received chunk %d/%d with %d points (total %d)",
       //   (int)tof_obstacles_chunk.chunk_id + 1,
       //   (int)tof_obstacles_chunk.num_chunks,
@@ -317,17 +318,15 @@ void MulticopterSafeControl::Run()
       //   (int)tof_obstacles_chunk.num_points_total
       // );
 
-      std::vector<Vector3f>& obstacles = _cbf_safety_filter.obstacles();
+      px4::Array<Vector3f, CBF_MAX_OBSTACLES>& obstacles = _cbf_safety_filter.obstacles();
       if (_prev_obstacles_chunk_id < 0 || (int)tof_obstacles_chunk.chunk_id <= _prev_obstacles_chunk_id) {
         obstacles.clear();
       }
       _prev_obstacles_chunk_id = (int)tof_obstacles_chunk.chunk_id;
+      // TODO check for adding more obstacles than max
       for (int i = 0; i < tof_obstacles_chunk.num_points_chunk; i++) {
-        obstacles.emplace_back(
-          tof_obstacles_chunk.points_x[i],
-          tof_obstacles_chunk.points_y[i],
-          tof_obstacles_chunk.points_z[i]
-        );
+        obstacles.push_back(Vector3f(tof_obstacles_chunk.points_x[i], tof_obstacles_chunk.points_y[i],
+                                     tof_obstacles_chunk.points_z[i]));
       }
 
       // PX4_INFO("Number of obstacles: %d", (int)obstacles.size());

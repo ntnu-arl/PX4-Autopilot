@@ -46,8 +46,6 @@ void CBFSafetyFilter::update(Vector3f& acceleration_setpoint, uint64_t timestamp
     Dcmf R_IV(euler_IV);
     Dcmf R_VI = R_IV.transpose();
 
-    _nu1.resize(n);
-
     // ====================================================================
     // ====================== composite collision CBF =====================
     // ====================================================================

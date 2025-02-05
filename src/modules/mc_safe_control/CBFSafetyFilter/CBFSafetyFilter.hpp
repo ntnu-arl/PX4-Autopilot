@@ -3,7 +3,9 @@
 #include <matrix/matrix/math.hpp>
 #include <mathlib/math/Limits.hpp>
 
-#include <vector>
+#include <containers/Array.hpp>
+
+#define CBF_MAX_OBSTACLES 50
 
 
 using namespace matrix;
@@ -31,7 +33,7 @@ public:
     void setGamma(float gamma) { _gamma = gamma; }
     void setAlpha(float alpha) { _alpha = alpha; }
 
-    std::vector<Vector3f>& obstacles() { return _obstacles; }
+    px4::Array<Vector3f, CBF_MAX_OBSTACLES>& obstacles() { return _obstacles; }
 
 private:
 
@@ -39,9 +41,10 @@ private:
     Vector3f _local_velocity;
     Vector3f _velocity;
     Quatf _attitude;
-    std::vector<Vector3f> _obstacles;
+    px4::Array<Vector3f, CBF_MAX_OBSTACLES> _obstacles;
+    size_t _num_obstacles;
 //     std::vector<Vector3f> _rel_pos;
-    std::vector<float> _nu1;
+    px4::Array<float, CBF_MAX_OBSTACLES> _nu1;
 
     float _epsilon = 1.f;
     float _pole0 = -1.f;
