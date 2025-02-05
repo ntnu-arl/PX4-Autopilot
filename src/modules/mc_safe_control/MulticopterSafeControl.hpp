@@ -62,6 +62,7 @@
 #include <uORB/topics/trajectory_setpoint.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/tof_obstacles_chunk.h>
+#include <uORB/topics/cbf_debug.h>
 
 #include <uORB/topics/vehicle_status.h>
 #include <lib/mathlib/math/filter/AlphaFilter.hpp>
@@ -211,6 +212,7 @@ void bodyzToAttitude(Vector3f body_z, const float yaw_sp, vehicle_attitude_setpo
 	uORB::Publication<vehicle_attitude_setpoint_s> _vehicle_attitude_setpoint_pub{ORB_ID(vehicle_attitude_setpoint)};
 	uORB::Publication<vehicle_local_position_setpoint_s> _vehicle_local_position_setpoint_pub{ORB_ID(vehicle_local_position_setpoint)};
 	uORB::Publication<trajectory_setpoint_s> _trajectory_setpoint_pub{ORB_ID(trajectory_setpoint)};
+	uORB::Publication<cbf_debug_s> _cbf_debug_pub{ORB_ID(cbf_debug)};
 	// =================================================
 
   // manual_control_setpoint_s       _manual_control_setpoint {};    /**< manual control setpoint */

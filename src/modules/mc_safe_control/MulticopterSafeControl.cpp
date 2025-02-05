@@ -428,6 +428,11 @@ void MulticopterSafeControl::Run()
       // attitude_setpoint = _pd_position_control.calculateAttitude(acceleration_setpoint);
       // PX4_WARN("cbf_filter duration: %llu", toc - tic);
 
+      cbf_debug_s cbf_debug_msg;
+      cbf_debug_msg.timestamp = hrt_absolute_time();
+      _cbf_safety_filter.getDebug(cbf_debug_msg);
+      _cbf_debug_pub.publish(cbf_debug_msg);
+
       acceleration_setpoint(0) = math::constrain(acceleration_setpoint(0), -3.f, 3.f);
       acceleration_setpoint(1) = math::constrain(acceleration_setpoint(1), -3.f, 3.f);
       acceleration_setpoint(2) = math::constrain(acceleration_setpoint(2), -5.f, 5.f);

@@ -115,6 +115,12 @@ void CBFSafetyFilter::update(Vector3f& acceleration_setpoint, uint64_t timestamp
 
 //     acceleration_setpoint = R_IB * local_accel_setpoint;
 
+    _debug_msg.h = h;
+    // _debug_msg.virtual_obstacle = ; // TODO: marvin
+    _debug_msg.input[0] = acceleration_setpoint(0);
+    _debug_msg.input[1] = acceleration_setpoint(1);
+    _debug_msg.input[2] = acceleration_setpoint(2);
+
     USING_NAMESPACE_QPOASES
 
     // Hessian
@@ -162,6 +168,9 @@ void CBFSafetyFilter::update(Vector3f& acceleration_setpoint, uint64_t timestamp
         PX4_ERR("QP initialisation failed: returned %d", qp_status);
         break;
     }
+    _debug_msg.output[0] = acceleration_setpoint(0);
+    _debug_msg.output[1] = acceleration_setpoint(1);
+    _debug_msg.output[2] = acceleration_setpoint(2);
 
     dbg.timestamp = timestamp;
     dbg.x = h;
