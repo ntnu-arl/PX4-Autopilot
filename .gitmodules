@@ -85,4 +85,4 @@
 	url = https://gitlab.com/voxl-public/voxl-sdk/core-libs/libfc-sensor-api.git
 [submodule "src/lib/qpoases/qpOASES"]
 	path = src/lib/qpoases/qpOASES
-	url = https://github.com/coin-or/qpOASES
+	url = https://github.com/ntnu-arl/qpOASES
