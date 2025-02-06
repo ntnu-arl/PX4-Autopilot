@@ -1,6 +1,6 @@
 [submodule "src/modules/mavlink/mavlink"]
 	path = src/modules/mavlink/mavlink
-	url = https://github.com/ntnu-arl/mavlink.git
+	url = https://github.com/ntnu-arl/mavlink-gbp-release.git
 	branch = dev/px4-v.15.3/cbf
 [submodule "src/drivers/uavcan/libuavcan"]
 	path = src/drivers/uavcan/libuavcan
