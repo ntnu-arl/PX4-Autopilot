@@ -49,4 +49,5 @@ px4_add_module(
 		controllib
 		geo
 		SlewRate
+		qpoases
 	)

@@ -507,7 +507,7 @@ static const StreamListItem streams_list[] = {
 	create_stream_list_item<MavlinkStreamCurrentMode>(),
 #endif // CURRENT_MODE_HPP
 #if defined(CBF_DEBUG_HPP)
-	create_stream_list_item<MavlinkStreamCbfDebug>(),
+	create_stream_list_item<MavlinkStreamCbfDebug>()
 #endif // CBF_DEBUG_HPP
 };
 
