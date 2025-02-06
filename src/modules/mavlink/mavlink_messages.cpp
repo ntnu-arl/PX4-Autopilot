@@ -65,6 +65,7 @@
 #include "streams/BATTERY_STATUS.hpp"
 #include "streams/CAMERA_IMAGE_CAPTURED.hpp"
 #include "streams/CAMERA_TRIGGER.hpp"
+#include "streams/CBF_DEBUG.hpp"
 #include "streams/COLLISION.hpp"
 #include "streams/COMMAND_LONG.hpp"
 #include "streams/COMPONENT_INFORMATION.hpp"
@@ -505,6 +506,9 @@ static const StreamListItem streams_list[] = {
 #if defined(CURRENT_MODE_HPP)
 	create_stream_list_item<MavlinkStreamCurrentMode>(),
 #endif // CURRENT_MODE_HPP
+#if defined(CBF_DEBUG_HPP)
+	create_stream_list_item<MavlinkStreamCbfDebug>(),
+#endif // CBF_DEBUG_HPP
 };
 
 const char *get_stream_name(const uint16_t msg_id)
