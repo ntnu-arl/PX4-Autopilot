@@ -23,7 +23,7 @@ using namespace qpOASES;
 class CBFSafetyFilter
 {
 public:
-    CBFSafetyFilter();
+    CBFSafetyFilter() = default;
 	~CBFSafetyFilter() = default;
 
     void updateObstacles();
@@ -64,7 +64,7 @@ private:
     px4::Array<Vector3f, CBF_MAX_OBSTACLES> _obstacles;
     px4::Array<float, CBF_MAX_OBSTACLES> _nu1;
 
-    cbf_debug_s _debug_msg;
+    cbf_debug_s _debug_msg{};
 
     float _epsilon;
     float _pole0;
@@ -83,7 +83,4 @@ private:
     float saturate(float x);
     float saturateDerivative(float x);
     float kappaFunction(float h, float alpha);
-
-    QProblem qp;
-    real_t _xOpt[NV];
 };

@@ -3,15 +3,6 @@
  */
 #include <CBFSafetyFilter.hpp>
 
-#include <px4_platform_common/module.h>
-#include <math.h>
-#include <string.h>
-
-CBFSafetyFilter::CBFSafetyFilter() {
-    qp = QProblem(NV, NC);
-    qp.setPrintLevel(PL_NONE);
-}
-
 void CBFSafetyFilter::updateObstacles() {
     tof_obstacles_chunk_s tof_obstacles_chunk;
     if (_tof_obstacles_chunk_sub.update(&tof_obstacles_chunk))
@@ -177,14 +168,15 @@ void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& ve
     real_t* ub = NULL;
     int_t nWSR = 50;
 
-    qp = QProblem(NV, NC);
+    QProblem qp(NV, NC);
     qp.setPrintLevel(PL_NONE);
     returnValue qp_status = qp.init(H, g, A, lb, ub, lbA, ubA, nWSR);
 
+    real_t xOpt[NV];
     switch(qp_status) {
         case SUCCESSFUL_RETURN: {
-            qp.getPrimalSolution(_xOpt);
-            Vector3f acceleration_correction(_xOpt[0], _xOpt[1], _xOpt[2]);
+            qp.getPrimalSolution(xOpt);
+            Vector3f acceleration_correction(xOpt[0], xOpt[1], xOpt[2]);
             _body_acceleration_setpoint += acceleration_correction;
             acceleration_setpoint = R_WB * _body_acceleration_setpoint;
             _debug_msg.qp_fail = 0;
@@ -207,8 +199,8 @@ void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& ve
     _debug_msg.output[0] = acceleration_setpoint(0);
     _debug_msg.output[1] = acceleration_setpoint(1);
     _debug_msg.output[2] = acceleration_setpoint(2);
-    _debug_msg.slack[0] = _xOpt[3];
-    _debug_msg.slack[1] = _xOpt[4];
+    _debug_msg.slack[0] = xOpt[3];
+    _debug_msg.slack[1] = xOpt[4];
 }
 
 void CBFSafetyFilter::clampAccSetpoint(Vector3f& acceleration_setpoint) {
