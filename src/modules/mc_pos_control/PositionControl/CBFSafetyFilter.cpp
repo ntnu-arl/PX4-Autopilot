@@ -73,7 +73,6 @@ void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& ve
     Eulerf euler_current(_attitude);
     Eulerf euler_WV(0.f, 0.f, euler_current.psi());
     Dcmf R_WV(euler_WV);
-    Dcmf R_BV = R_BW * R_WV;
 
     _body_acceleration_setpoint = R_BW * acceleration_setpoint;
     _body_velocity = R_BW * velocity;
@@ -117,77 +116,14 @@ void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& ve
     // L_{g}h(x) * u, u = k_n(x) = a
     float Lg_h_u = Lg_h.dot(_body_acceleration_setpoint);
 
-
-    // horizontal FoV CBF
-    Vector3f e1(sinf(_fov_h), cosf(_fov_h), 0.f);
-    Vector3f e2(sinf(_fov_h), -cosf(_fov_h), 0.f);
-    e1 = R_BV * e1;
-    e2 = R_BV * e2;
-    float h1 = (e1).dot(_body_velocity);
-    float h2 = (e2).dot(_body_velocity);
-    float Lf_h1 = 0.f;
-    float Lf_h2 = 0.f;
-    Vector3f Lg_h1 = e1;
-    Vector3f Lg_h2 = e2;
-
     // analytical QP solution from: https://arxiv.org/abs/2206.03568
-    // float eta = 0.f;
-    // float Lg_h_mag2 = Lg_h.norm_squared();
-    // if (Lg_h_mag2 > 1e-5f) {
-    //     eta = -(Lf_h + Lg_h_u + _alpha*h) / Lg_h_mag2;
-    // }
-    // Vector3f local_correction = (eta > 0.f ? eta : 0.f) * Lg_h;
-    // dbg.x = local_correction(0);
-    // dbg.y = local_correction(1);
-    // dbg.z = local_correction(2);
-    // local_accel_setpoint += local_correction;
-    // acceleration_setpoint = R_IB * local_accel_setpoint;
-
-    // solve QP
-    // quadratic cost x^T*H*x
-    real_t H[NV*NV] = {(real_t)_qp_gain_x, 0.0, 0.0, 0.0, 0.0,
-                       0.0, (real_t)_qp_gain_y, 0.0, 0.0, 0.0,
-                       0.0, 0.0, (real_t)_qp_gain_z, 0.0, 0.0,
-                       0.0, 0.0, 0.0, 0.0, 0.0,
-                       0.0, 0.0, 0.0, 0.0, 0.0};
-    // linear cost matrix g*x
-    real_t  g[NV] = { 0.0, 0.0, 0.0, (real_t)_fov_slack, (real_t)_fov_slack };
-    // constraint matrix A
-    real_t  A[NC*NV] = {(real_t)Lg_h(0),  (real_t)Lg_h(1),  (real_t)Lg_h(2),  0.0, 0.0,
-                        0.0,              0.0,              0.0,              1.0, 0.0,
-                        (real_t)Lg_h1(0), (real_t)Lg_h1(1), (real_t)Lg_h1(2), 1.0, 0.0,
-                        0.0,              0.0,              0.0,              0.0, 1.0,
-                        (real_t)Lg_h2(0), (real_t)Lg_h2(1), (real_t)Lg_h2(2), 0.0, 1.0};
-    // bounds on Ax
-    real_t  lbA[NC] = { (real_t)(-Lf_h - kappaFunction(h, _alpha) - Lg_h_u), 0.0, (real_t)(-Lf_h1 - _fov_alpha * h1), 0.0, (real_t)(-Lf_h2 - _fov_alpha * h2) };
-    real_t* ubA = NULL;
-    // bounds on x
-    real_t* lb = NULL;
-    real_t* ub = NULL;
-    int_t nWSR = 50;
-
-    QProblem qp(NV, NC);
-    qp.setPrintLevel(PL_NONE);
-    returnValue qp_status = qp.init(H, g, A, lb, ub, lbA, ubA, nWSR);
-
-    real_t xOpt[NV];
-    switch(qp_status) {
-        case SUCCESSFUL_RETURN: {
-            qp.getPrimalSolution(xOpt);
-            Vector3f acceleration_correction(xOpt[0], xOpt[1], xOpt[2]);
-            _unfiltered_ouput = _body_acceleration_setpoint + acceleration_correction;
-            _debug_msg.qp_fail = 0;
-            break;
-        }
-        case RET_MAX_NWSR_REACHED:
-            PX4_ERR("QP could not be solved within the given number of working set recalculations");
-            _debug_msg.qp_fail = 1;
-            break;
-        default:
-            PX4_ERR("QP failed: returned %d", qp_status);
-            _debug_msg.qp_fail = 1;
-            break;
+    float eta = 0.f;
+    float Lg_h_mag2 = Lg_h.norm_squared();
+    if (Lg_h_mag2 > 1e-5f) {
+        eta = -(Lf_h + Lg_h_u + _alpha*h) / Lg_h_mag2;
     }
+    Vector3f acceleration_correction = (eta > 0.f ? eta : 0.f) * Lg_h;
+    _unfiltered_ouput = _body_acceleration_setpoint + acceleration_correction;
 
     // clamp and low pass acceleration ouptput
     clampAccSetpoint(_unfiltered_ouput);
@@ -197,8 +133,6 @@ void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& ve
 
     uint64_t toc = hrt_absolute_time();
     _debug_msg.h = h;
-    _debug_msg.h1 = h1;
-    _debug_msg.h2 = h2;
     // _debug_msg.virtual_obstacle = ; // TODO: marvin
     _debug_msg.input[0] = _filtered_input(0);
     _debug_msg.input[1] = _filtered_input(1);
@@ -207,8 +141,6 @@ void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& ve
     _debug_msg.output[0] = _filtered_ouput(0);
     _debug_msg.output[1] = _filtered_ouput(1);
     _debug_msg.output[2] = _filtered_ouput(2);
-    _debug_msg.slack[0] = xOpt[3];
-    _debug_msg.slack[1] = xOpt[4];
 }
 
 void CBFSafetyFilter::clampAccSetpoint(Vector3f& acc) {
