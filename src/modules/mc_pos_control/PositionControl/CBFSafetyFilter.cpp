@@ -7,6 +7,7 @@ void CBFSafetyFilter::updateObstacles() {
     tof_obstacles_chunk_s tof_obstacles_chunk;
     if (_tof_obstacles_chunk_sub.update(&tof_obstacles_chunk))
     {
+        _ts_obs = hrt_absolute_time();
         // TODO make this part of the message
         size_t max_chunk_size = 20;
 
@@ -56,7 +57,10 @@ void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& ve
     if  (!_enabled) return;
     uint64_t tic = hrt_absolute_time();
 
-    // TODO reset obstacle with timer
+    // timeout obstacles
+    if (tic - _ts_obs > _obstacle_timeout)
+        _obstacles.clear();
+
     // pass through if no obstacles are recorded
     updateAttitude();
     updateObstacles();
@@ -69,13 +73,13 @@ void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& ve
     Eulerf euler_current(_attitude);
     Eulerf euler_WV(0.f, 0.f, euler_current.psi());
     Dcmf R_WV(euler_WV);
-    Dcmf R_VW = R_WV.transpose();
     Dcmf R_BV = R_BW * R_WV;
 
     _body_acceleration_setpoint = R_BW * acceleration_setpoint;
     _body_velocity = R_BW * velocity;
-    _vehicle_velocity = R_VW * velocity;
 
+    // low pass acceleration setpoint
+    _filtered_input = (1.f - _lp_gain_in) * _filtered_input + _lp_gain_in * _body_acceleration_setpoint;
 
     // composite collision CBF
     // nu1_i
@@ -117,12 +121,14 @@ void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& ve
     // horizontal FoV CBF
     Vector3f e1(sinf(_fov_h), cosf(_fov_h), 0.f);
     Vector3f e2(sinf(_fov_h), -cosf(_fov_h), 0.f);
-    float h1 = (e1).dot(_vehicle_velocity);
-    float h2 = (e2).dot(_vehicle_velocity);
+    e1 = R_BV * e1;
+    e2 = R_BV * e2;
+    float h1 = (e1).dot(_body_velocity);
+    float h2 = (e2).dot(_body_velocity);
     float Lf_h1 = 0.f;
     float Lf_h2 = 0.f;
-    Vector3f Lg_h1 = R_BV * e1;
-    Vector3f Lg_h2 = R_BV * e2;
+    Vector3f Lg_h1 = e1;
+    Vector3f Lg_h2 = e2;
 
     // analytical QP solution from: https://arxiv.org/abs/2206.03568
     // float eta = 0.f;
@@ -137,29 +143,21 @@ void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& ve
     // local_accel_setpoint += local_correction;
     // acceleration_setpoint = R_IB * local_accel_setpoint;
 
-    _debug_msg.h = h;
-    _debug_msg.h1 = h1;
-    _debug_msg.h2 = h2;
-    // _debug_msg.virtual_obstacle = ; // TODO: marvin
-    _debug_msg.input[0] = acceleration_setpoint(0);
-    _debug_msg.input[1] = acceleration_setpoint(1);
-    _debug_msg.input[2] = acceleration_setpoint(2);
-
     // solve QP
     // quadratic cost x^T*H*x
-    real_t H[NV*NV] = {1.0, 0.0, 0.0, 0.0, 0.0,
-                     0.0, 1.0, 0.0, 0.0, 0.0,
-                     0.0, 0.0, 3.0, 0.0, 0.0,
-                     0.0, 0.0, 0.0, 0.0, 0.0,
-                     0.0, 0.0, 0.0, 0.0, 0.0};
+    real_t H[NV*NV] = {(real_t)_qp_gain_x, 0.0, 0.0, 0.0, 0.0,
+                       0.0, (real_t)_qp_gain_y, 0.0, 0.0, 0.0,
+                       0.0, 0.0, (real_t)_qp_gain_z, 0.0, 0.0,
+                       0.0, 0.0, 0.0, 0.0, 0.0,
+                       0.0, 0.0, 0.0, 0.0, 0.0};
     // linear cost matrix g*x
     real_t  g[NV] = { 0.0, 0.0, 0.0, (real_t)_fov_slack, (real_t)_fov_slack };
     // constraint matrix A
-    real_t  A[NC*NV] = {(real_t)Lg_h(0), (real_t)Lg_h(1), (real_t)Lg_h(2), (real_t)0.0, (real_t)0.0,
-                      (real_t)0.0, (real_t)0.0, (real_t)0.0, (real_t)1.0, (real_t)0.0,
-                      (real_t)Lg_h1(0), (real_t)Lg_h1(1), (real_t)Lg_h1(2), (real_t)1.0, (real_t)0.0,
-                      (real_t)0.0, (real_t)0.0, (real_t)0.0, (real_t)0.0, (real_t)1.0,
-                      (real_t)Lg_h2(0), (real_t)Lg_h2(1), (real_t)Lg_h2(2), 0.0, (real_t)1.0};
+    real_t  A[NC*NV] = {(real_t)Lg_h(0),  (real_t)Lg_h(1),  (real_t)Lg_h(2),  0.0, 0.0,
+                        0.0,              0.0,              0.0,              1.0, 0.0,
+                        (real_t)Lg_h1(0), (real_t)Lg_h1(1), (real_t)Lg_h1(2), 1.0, 0.0,
+                        0.0,              0.0,              0.0,              0.0, 1.0,
+                        (real_t)Lg_h2(0), (real_t)Lg_h2(1), (real_t)Lg_h2(2), 0.0, 1.0};
     // bounds on Ax
     real_t  lbA[NC] = { (real_t)(-Lf_h - kappaFunction(h, _alpha) - Lg_h_u), 0.0, (real_t)(-Lf_h1 - _fov_alpha * h1), 0.0, (real_t)(-Lf_h2 - _fov_alpha * h2) };
     real_t* ubA = NULL;
@@ -177,8 +175,7 @@ void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& ve
         case SUCCESSFUL_RETURN: {
             qp.getPrimalSolution(xOpt);
             Vector3f acceleration_correction(xOpt[0], xOpt[1], xOpt[2]);
-            _body_acceleration_setpoint += acceleration_correction;
-            acceleration_setpoint = R_WB * _body_acceleration_setpoint;
+            _unfiltered_ouput = _body_acceleration_setpoint + acceleration_correction;
             _debug_msg.qp_fail = 0;
             break;
         }
@@ -192,21 +189,32 @@ void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& ve
             break;
     }
 
-    clampAccSetpoint(acceleration_setpoint);
+    // clamp and low pass acceleration ouptput
+    clampAccSetpoint(_unfiltered_ouput);
+    _filtered_ouput = (1.f - _lp_gain_out) * _filtered_ouput + _lp_gain_out * _unfiltered_ouput;
+
+    acceleration_setpoint =  R_WB * _filtered_ouput;
 
     uint64_t toc = hrt_absolute_time();
-    _debug_msg.cbf_duration = (uint32_t)(toc-tic);
-    _debug_msg.output[0] = acceleration_setpoint(0);
-    _debug_msg.output[1] = acceleration_setpoint(1);
-    _debug_msg.output[2] = acceleration_setpoint(2);
+    _debug_msg.h = h;
+    _debug_msg.h1 = h1;
+    _debug_msg.h2 = h2;
+    // _debug_msg.virtual_obstacle = ; // TODO: marvin
+    _debug_msg.input[0] = _filtered_input(0);
+    _debug_msg.input[1] = _filtered_input(1);
+    _debug_msg.input[2] = _filtered_input(2);
+    _debug_msg.cbf_duration = toc - tic;
+    _debug_msg.output[0] = _filtered_ouput(0);
+    _debug_msg.output[1] = _filtered_ouput(1);
+    _debug_msg.output[2] = _filtered_ouput(2);
     _debug_msg.slack[0] = xOpt[3];
     _debug_msg.slack[1] = xOpt[4];
 }
 
-void CBFSafetyFilter::clampAccSetpoint(Vector3f& acceleration_setpoint) {
-    acceleration_setpoint(0) = math::constrain(acceleration_setpoint(0), -max_acc_xy, max_acc_xy);
-    acceleration_setpoint(1) = math::constrain(acceleration_setpoint(1), -max_acc_xy, max_acc_xy);
-    acceleration_setpoint(2) = math::constrain(acceleration_setpoint(2), -max_acc_z, max_acc_z);
+void CBFSafetyFilter::clampAccSetpoint(Vector3f& acc) {
+    acc(0) = math::constrain(acc(0), -_max_acc_xy, _max_acc_xy);
+    acc(1) = math::constrain(acc(1), -_max_acc_xy, _max_acc_xy);
+    acc(2) = math::constrain(acc(2), -_max_acc_z, _max_acc_z);
 }
 
 float CBFSafetyFilter::saturate(float x) {
