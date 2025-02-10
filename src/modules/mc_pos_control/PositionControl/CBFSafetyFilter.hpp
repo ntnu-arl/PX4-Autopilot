@@ -93,6 +93,7 @@ private:
     float _max_acc_z;
     bool _enabled;
     const float _fov_h = 40.f / 180.f * 3.1415f;  // TODO set as param
+    bool _solve_analytic{true};
 
     void clampAccSetpoint(Vector3f& acceleration_setpoint);
     float saturate(float x);

@@ -116,14 +116,79 @@ void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& ve
     // L_{g}h(x) * u, u = k_n(x) = a
     float Lg_h_u = Lg_h.dot(_body_acceleration_setpoint);
 
-    // analytical QP solution from: https://arxiv.org/abs/2206.03568
-    float eta = 0.f;
-    float Lg_h_mag2 = Lg_h.norm_squared();
-    if (Lg_h_mag2 > 1e-5f) {
-        eta = -(Lf_h + Lg_h_u + _alpha*h) / Lg_h_mag2;
+    // TODO: using _solve_analytic even when hardcoded `true` crashesz
+    if (true) {
+        // analytical QP solution from: https://arxiv.org/abs/2206.03568
+        float eta = 0.f;
+        float Lg_h_mag2 = Lg_h.norm_squared();
+        if (Lg_h_mag2 > 1e-5f) {
+            eta = -(Lf_h + Lg_h_u + _alpha*h) / Lg_h_mag2;
+        }
+        Vector3f acceleration_correction = (eta > 0.f ? eta : 0.f) * Lg_h;
+        _unfiltered_ouput = _body_acceleration_setpoint + acceleration_correction;
+    } else {
+        // REVIEW: declaring QP here still causes crashes
+        // not really sure why
+
+        Dcmf R_BV = R_BW * R_WV;
+        // horizontal FoV CBF
+        Vector3f e1(sinf(_fov_h), cosf(_fov_h), 0.f);
+        Vector3f e2(sinf(_fov_h), -cosf(_fov_h), 0.f);
+        e1 = R_BV * e1;
+        e2 = R_BV * e2;
+        float h1 = (e1).dot(_body_velocity);
+        float h2 = (e2).dot(_body_velocity);
+        float Lf_h1 = 0.f;
+        float Lf_h2 = 0.f;
+        Vector3f Lg_h1 = e1;
+        Vector3f Lg_h2 = e2;
+
+        // solve QP
+        // quadratic cost x^T*H*x
+        real_t H[NV*NV] = {(real_t)_qp_gain_x, 0.0, 0.0, 0.0, 0.0,
+                        0.0, (real_t)_qp_gain_y, 0.0, 0.0, 0.0,
+                        0.0, 0.0, (real_t)_qp_gain_z, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 0.0, 0.0,
+                        0.0, 0.0, 0.0, 0.0, 0.0};
+        // linear cost matrix g*x
+        real_t  g[NV] = { 0.0, 0.0, 0.0, (real_t)_fov_slack, (real_t)_fov_slack };
+        // constraint matrix A
+        real_t  A[NC*NV] = {(real_t)Lg_h(0),  (real_t)Lg_h(1),  (real_t)Lg_h(2),  0.0, 0.0,
+                            0.0,              0.0,              0.0,              1.0, 0.0,
+                            (real_t)Lg_h1(0), (real_t)Lg_h1(1), (real_t)Lg_h1(2), 1.0, 0.0,
+                            0.0,              0.0,              0.0,              0.0, 1.0,
+                            (real_t)Lg_h2(0), (real_t)Lg_h2(1), (real_t)Lg_h2(2), 0.0, 1.0};
+        // bounds on Ax
+        real_t  lbA[NC] = { (real_t)(-Lf_h - kappaFunction(h, _alpha) - Lg_h_u), 0.0, (real_t)(-Lf_h1 - _fov_alpha * h1), 0.0, (real_t)(-Lf_h2 - _fov_alpha * h2) };
+        real_t* ubA = NULL;
+        // bounds on x
+        real_t* lb = NULL;
+        real_t* ub = NULL;
+        int_t nWSR = 2;
+
+        QProblem qp(NV, NC);
+        qp.setPrintLevel(PL_NONE);
+        returnValue qp_status = qp.init(H, g, A, lb, ub, lbA, ubA, nWSR);
+
+        real_t xOpt[NV];
+        switch(qp_status) {
+            case SUCCESSFUL_RETURN: {
+                qp.getPrimalSolution(xOpt);
+                Vector3f acceleration_correction(xOpt[0], xOpt[1], xOpt[2]);
+                _unfiltered_ouput = _body_acceleration_setpoint + acceleration_correction;
+                _debug_msg.qp_fail = 0;
+                break;
+            }
+            case RET_MAX_NWSR_REACHED:
+                PX4_ERR("QP could not be solved within the given number of working set recalculations");
+                _debug_msg.qp_fail = 1;
+                break;
+            default:
+                PX4_ERR("QP failed: returned %d", qp_status);
+                _debug_msg.qp_fail = 1;
+                break;
+        }
     }
-    Vector3f acceleration_correction = (eta > 0.f ? eta : 0.f) * Lg_h;
-    _unfiltered_ouput = _body_acceleration_setpoint + acceleration_correction;
 
     // clamp and low pass acceleration ouptput
     clampAccSetpoint(_unfiltered_ouput);
