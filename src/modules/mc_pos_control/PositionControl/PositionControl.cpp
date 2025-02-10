@@ -151,7 +151,9 @@ void PositionControl::_velocityControl(const float dt)
 
 	// TODO: check if _vel can be NAN
 	Vector3f _acc_sp_unfiltered = _acc_sp;
-	_cbf.filter(_acc_sp, _vel);
+	if (_vel.isAllFinite()) {
+		_cbf.filter(_acc_sp, _vel);
+	}
 
 	_accelerationControl();
 
