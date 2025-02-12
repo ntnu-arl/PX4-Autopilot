@@ -1,3 +1,7 @@
+# CBF Safety Filter
+
+This fork contains the implementation of the embedded CBF safety filter for multirotors. We refer the user to the documentation in [the dedicated github](https://github.com/ntnu-arl/PX4-CBF), and leave the remainder of the PX4 Autopilot README untouched.
+
 # PX4 Drone Autopilot
 
 [![Releases](https://img.shields.io/github/release/PX4/PX4-Autopilot.svg)](https://github.com/PX4/PX4-Autopilot/releases) [![DOI](https://zenodo.org/badge/22634/PX4/PX4-Autopilot.svg)](https://zenodo.org/badge/latestdoi/22634/PX4/PX4-Autopilot)
