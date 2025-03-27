@@ -100,7 +100,7 @@ PARAM_DEFINE_FLOAT(CBF_FOV_ALPHA, 1.f);
  * @increment 0.001
  * @group Multicopter Position Control
  */
- PARAM_DEFINE_FLOAT(CBF_LP_GAIN_IN, 0.01f);
+ PARAM_DEFINE_FLOAT(CBF_LP_GAIN_IN, 0.5f);
 
 /**
  * CBF ouput low pass filter gain
@@ -113,7 +113,7 @@ PARAM_DEFINE_FLOAT(CBF_FOV_ALPHA, 1.f);
  * @increment 0.001
  * @group Multicopter Position Control
  */
- PARAM_DEFINE_FLOAT(CBF_LP_GAIN_OUT, 0.01f);
+ PARAM_DEFINE_FLOAT(CBF_LP_GAIN_OUT, 0.5f);
 
 /**
  * Gain on the x axis error in the CBF-QP cost function
