@@ -93,7 +93,7 @@ private:
     float _max_acc_xy;
     float _max_acc_z;
     bool _enabled;
-    const float _fov_h = 40.f / 180.f * 3.1415f;  // TODO set as param
+    const float _fov_h = 45.f / 180.f * 3.1415f;  // TODO set as param
 
     void clampAccSetpoint(Vector3f& acceleration_setpoint);
     float saturate(float x);
