@@ -6,7 +6,7 @@
 #include <matrix/matrix/math.hpp>
 #include <mathlib/math/Limits.hpp>
 #include <uORB/Subscription.hpp>
-#include <uORB/topics/tof_obstacles_chunk.h>
+#include <uORB/topics/obstacles.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/cbf_debug.h>
 #include <qpOASES.hpp>
@@ -59,7 +59,7 @@ public:
 
 private:
     uORB::Subscription _vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
-    uORB::Subscription _tof_obstacles_chunk_sub{ORB_ID(tof_obstacles_chunk)};
+    uORB::Subscription _obstacles_sub{ORB_ID(obstacles)};
 
     Quatf _attitude;
     Vector3f _body_velocity;
