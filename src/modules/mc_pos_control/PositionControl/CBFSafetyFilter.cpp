@@ -4,15 +4,16 @@
 #include <CBFSafetyFilter.hpp>
 
 void CBFSafetyFilter::updateObstacles() {
-    obstacles_s obs;
-    if (_obstacles_sub.update(&obs))
-    {
-        _obstacles.clear();
-        for (size_t i=0; i<obs.num_points; ++i)
-        {
-            _obstacles.push_back(Vector3f(obs.x[i], obs.y[i], obs.z[i]));
-        }
-    }
+    // obstacles_s obs;
+    // if (_obstacles_sub.update(&obs))
+    // {
+    //     _obstacles.clear();
+    //     for (size_t i=0; i<obs.num_points; ++i)
+    //     {
+    //         _obstacles.push_back(Vector3f(obs.x[i], obs.y[i], obs.z[i]));
+    //     }
+    // }
+    _obstacles.clear();
 }
 
 void CBFSafetyFilter::updateAttitude() {

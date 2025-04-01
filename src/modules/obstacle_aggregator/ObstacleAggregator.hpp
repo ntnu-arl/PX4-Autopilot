@@ -84,7 +84,7 @@ private:
 	perf_counter_t  _loop_perf;             /**< loop duration performance counter */
 	hrt_abstime _last_run{0};
 
-	obstacles_s _obstacles;
-	uint16_t _num_points_read;
-	bool _prev_chunk_id{0};
+	obstacles_s _obstacles{};
+	uint8_t _num_points_read{0};
+	uint8_t _prev_chunk_id{0};
 };

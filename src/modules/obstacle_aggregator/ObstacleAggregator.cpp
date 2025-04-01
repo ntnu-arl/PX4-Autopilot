@@ -68,11 +68,11 @@ bool ObstacleAggregator::init()
 // }
 
 void ObstacleAggregator::Run(){
-	if (should_exit()) {
-		_tof_obstacles_chunk_sub.unregisterCallback();
-		exit_and_cleanup();
-		return;
-	}
+	// if (should_exit()) {
+	// 	_tof_obstacles_chunk_sub.unregisterCallback();
+	// 	exit_and_cleanup();
+	// 	return;
+	// }
 
 	perf_begin(_loop_perf);
 
@@ -87,34 +87,34 @@ void ObstacleAggregator::Run(){
 	// }
 
 	// run on new chunks available
-	tof_obstacles_chunk_s obs_chunk;
+	tof_obstacles_chunk_s obs_chunk{};
 	if (_tof_obstacles_chunk_sub.update(&obs_chunk))
 	{
-		if ((obs_chunk.chunk_id == 0) || (obs_chunk.chunk_id < _prev_chunk_id))
-		{
-			_num_points_read = 0;
-		}
+		// if ((obs_chunk.chunk_id == 0) || (obs_chunk.chunk_id < _prev_chunk_id))
+		// {
+		// 	_num_points_read = 0;
+		// }
 
-		// TODO: read points
-		for (size_t i = 0; i < obs_chunk.num_points_chunk; ++i)
-		{
-			const size_t j = i + _num_points_read;
-			_obstacles.x[j] = obs_chunk.points_x[i];
-			_obstacles.y[j] = obs_chunk.points_y[i];
-			_obstacles.z[j] = obs_chunk.points_z[i];
-		}
-		_num_points_read += obs_chunk.num_points_chunk;
+		// // TODO: read points
+		// for (size_t i = 0; i < obs_chunk.num_points_chunk; ++i)
+		// {
+		// 	// const size_t j = i + _num_points_read;
+		// 	_obstacles.x[i] = obs_chunk.points_x[i];
+		// 	_obstacles.y[i] = obs_chunk.points_y[i];
+		// 	_obstacles.z[i] = obs_chunk.points_z[i];
+		// }
+		// _num_points_read += obs_chunk.num_points_chunk;
 
-		// check if done
-		if (_num_points_read == static_cast<uint16_t>(obs_chunk.num_points_total))
-		{
-			// finished reading
-			_obstacles.timestamp = hrt_absolute_time();
-			_obstacles.num_points = _num_points_read;
-			_obstacles_pub.publish(_obstacles);
-		}
+		// // check if done
+		// if (_num_points_read == (uint8_t)obs_chunk.num_points_total)
+		// {
+		// 	// finished reading
+		// 	_obstacles.timestamp = hrt_absolute_time();
+		// 	_obstacles.num_points = 20;
+		// 	_obstacles_pub.publish(_obstacles);
+		// }
 
-		_prev_chunk_id = obs_chunk.chunk_id;
+		// _prev_chunk_id = obs_chunk.chunk_id;
 	}
 
 	perf_end(_loop_perf);
