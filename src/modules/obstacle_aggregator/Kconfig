@@ -1,0 +1,5 @@
+menuconfig MODULES_OBSTACLE_AGGREGATOR
+	bool "obstacle_aggregator"
+	default n
+	---help---
+		Enable support for obstacle_aggregator

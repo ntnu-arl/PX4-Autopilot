@@ -150,6 +150,7 @@ set(msg_files
 	NormalizedUnsignedSetpoint.msg
 	NpfgStatus.msg
 	ObstacleDistance.msg
+	Obstacles.msg
 	OffboardControlMode.msg
 	OnboardComputerStatus.msg
 	OrbitStatus.msg
