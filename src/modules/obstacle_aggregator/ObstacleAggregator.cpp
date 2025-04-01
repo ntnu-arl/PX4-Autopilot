@@ -41,16 +41,12 @@
 
 #include "ObstacleAggregator.hpp"
 
+using namespace time_literals;
+
 ObstacleAggregator::ObstacleAggregator() :
 	ModuleParams(nullptr),
-	WorkItem(MODULE_NAME, px4::wq_configurations::lp_default) {
-		_obstacles_pub.advertise();
+	WorkItem(MODULE_NAME, px4::wq_configurations::hp_default) {
 	}
-
-ObstacleAggregator::~ObstacleAggregator()
-{
-	perf_free(_loop_perf);
-}
 
 bool ObstacleAggregator::init()
 {
@@ -58,6 +54,8 @@ bool ObstacleAggregator::init()
 		PX4_ERR("callback registration failed");
 		return false;
 	}
+
+	_obstacles_pub.advertise();
 
 	return true;
 }
@@ -68,13 +66,13 @@ bool ObstacleAggregator::init()
 // }
 
 void ObstacleAggregator::Run(){
-	// if (should_exit()) {
-	// 	_tof_obstacles_chunk_sub.unregisterCallback();
-	// 	exit_and_cleanup();
-	// 	return;
-	// }
+	if (should_exit()) {
+		_tof_obstacles_chunk_sub.unregisterCallback();
+		exit_and_cleanup();
+		return;
+	}
 
-	perf_begin(_loop_perf);
+	// perf_begin(_loop_perf);
 
 	// // Check if parameters have changed
 	// if (_parameter_update_sub.updated()) {
@@ -90,10 +88,10 @@ void ObstacleAggregator::Run(){
 	tof_obstacles_chunk_s obs_chunk{};
 	if (_tof_obstacles_chunk_sub.update(&obs_chunk))
 	{
-		// if ((obs_chunk.chunk_id == 0) || (obs_chunk.chunk_id < _prev_chunk_id))
-		// {
-		// 	_num_points_read = 0;
-		// }
+		if ((obs_chunk.chunk_id == 0) || (obs_chunk.chunk_id < _prev_chunk_id))
+		{
+			_num_points_read = 0;
+		}
 
 		// // TODO: read points
 		// for (size_t i = 0; i < obs_chunk.num_points_chunk; ++i)
@@ -117,7 +115,7 @@ void ObstacleAggregator::Run(){
 		// _prev_chunk_id = obs_chunk.chunk_id;
 	}
 
-	perf_end(_loop_perf);
+	// perf_end(_loop_perf);
 }
 
 int ObstacleAggregator::task_spawn(int argc, char *argv[])
@@ -159,6 +157,7 @@ int ObstacleAggregator::print_usage(const char *reason)
 ### Description
 This implements the obstacle aggregator. It takes obstacle chunks as inputs and
 outputs an obstacle message.
+
 )DESCR_STR");
 
 	// TODO check if print usage name correct
