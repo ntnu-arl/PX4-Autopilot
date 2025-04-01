@@ -72,6 +72,7 @@ void ObstacleAggregator::Run(){
 		return;
 	}
 
+	// NOTE: perf seems to be a big part of causing crashes
 	// perf_begin(_loop_perf);
 
 	// // Check if parameters have changed
@@ -93,13 +94,13 @@ void ObstacleAggregator::Run(){
 			_num_points_read = 0;
 		}
 
-		// TODO: read points
+		// TODO: check if larger than size of obstacles
 		for (size_t i = 0; i < obs_chunk.num_points_chunk; ++i)
 		{
-			// const size_t j = i + _num_points_read;
-			_obstacles.x[i] = obs_chunk.points_x[i];
-			_obstacles.y[i] = obs_chunk.points_y[i];
-			_obstacles.z[i] = obs_chunk.points_z[i];
+			const size_t j = i + _num_points_read;
+			_obstacles.x[j] = obs_chunk.points_x[i];
+			_obstacles.y[j] = obs_chunk.points_y[i];
+			_obstacles.z[j] = obs_chunk.points_z[i];
 		}
 		_num_points_read += obs_chunk.num_points_chunk;
 
@@ -108,9 +109,10 @@ void ObstacleAggregator::Run(){
 		{
 			// finished reading
 			_obstacles.timestamp = hrt_absolute_time();
-			_obstacles.num_points = 20;
+			_obstacles.num_points = _num_points_read;
 			_obstacles_pub.publish(_obstacles);
 		}
+		// TODO add logging
 
 		_prev_chunk_id = obs_chunk.chunk_id;
 	}
