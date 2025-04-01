@@ -4,16 +4,16 @@
 #include <CBFSafetyFilter.hpp>
 
 void CBFSafetyFilter::updateObstacles() {
-    // obstacles_s obs;
-    // if (_obstacles_sub.update(&obs))
-    // {
-    //     _obstacles.clear();
-    //     for (size_t i=0; i<obs.num_points; ++i)
-    //     {
-    //         _obstacles.push_back(Vector3f(obs.x[i], obs.y[i], obs.z[i]));
-    //     }
-    // }
-    _obstacles.clear();
+    if (_obstacles_sub.update(&_obs_msg)) // causes problems if array in Obstacles.msg > 99
+    {
+        _ts_obs = hrt_absolute_time();
+
+        _obstacles.clear();
+        for (uint8_t i=0; i<_obs_msg.num_points; ++i) // causes problems if array in Obstacles.msg > 90
+        {
+            _obstacles.push_back(Vector3f(_obs_msg.x[i], _obs_msg.y[i], _obs_msg.z[i]));
+        }
+    }
 }
 
 void CBFSafetyFilter::updateAttitude() {
@@ -28,6 +28,10 @@ void CBFSafetyFilter::updateAttitude() {
 void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& velocity) {
     if  (!_enabled) return;
     uint64_t tic = hrt_absolute_time();
+
+    // timeout obstacles
+    if (tic - _ts_obs > _obstacle_timeout)
+        _obstacles.clear();
 
     // pass through if no obstacles are recorded
     updateAttitude();

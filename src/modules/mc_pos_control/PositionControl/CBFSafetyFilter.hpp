@@ -18,7 +18,7 @@ using namespace qpOASES;
 
 #define NV 5  // nb of QP variables
 #define NC 5  // nb of QP consntraints
-#define CBF_MAX_OBSTACLES 200
+#define CBF_MAX_OBSTACLES 100
 
 class CBFSafetyFilter
 {
@@ -70,6 +70,7 @@ private:
     Vector3f _filtered_ouput;
     Vector3f _unfiltered_ouput;
 
+    obstacles_s _obs_msg{};
     px4::Array<Vector3f, CBF_MAX_OBSTACLES> _obstacles;
     uint64_t _ts_obs;
     uint64_t _obstacle_timeout = 1000000;  // 1sec
