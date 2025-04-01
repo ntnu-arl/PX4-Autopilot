@@ -93,26 +93,26 @@ void ObstacleAggregator::Run(){
 			_num_points_read = 0;
 		}
 
-		// // TODO: read points
-		// for (size_t i = 0; i < obs_chunk.num_points_chunk; ++i)
-		// {
-		// 	// const size_t j = i + _num_points_read;
-		// 	_obstacles.x[i] = obs_chunk.points_x[i];
-		// 	_obstacles.y[i] = obs_chunk.points_y[i];
-		// 	_obstacles.z[i] = obs_chunk.points_z[i];
-		// }
-		// _num_points_read += obs_chunk.num_points_chunk;
+		// TODO: read points
+		for (size_t i = 0; i < obs_chunk.num_points_chunk; ++i)
+		{
+			// const size_t j = i + _num_points_read;
+			_obstacles.x[i] = obs_chunk.points_x[i];
+			_obstacles.y[i] = obs_chunk.points_y[i];
+			_obstacles.z[i] = obs_chunk.points_z[i];
+		}
+		_num_points_read += obs_chunk.num_points_chunk;
 
-		// // check if done
-		// if (_num_points_read == (uint8_t)obs_chunk.num_points_total)
-		// {
-		// 	// finished reading
-		// 	_obstacles.timestamp = hrt_absolute_time();
-		// 	_obstacles.num_points = 20;
-		// 	_obstacles_pub.publish(_obstacles);
-		// }
+		// check if done
+		if (_num_points_read == (uint8_t)obs_chunk.num_points_total)
+		{
+			// finished reading
+			_obstacles.timestamp = hrt_absolute_time();
+			_obstacles.num_points = 20;
+			_obstacles_pub.publish(_obstacles);
+		}
 
-		// _prev_chunk_id = obs_chunk.chunk_id;
+		_prev_chunk_id = obs_chunk.chunk_id;
 	}
 
 	// perf_end(_loop_perf);

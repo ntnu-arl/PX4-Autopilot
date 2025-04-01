@@ -34,7 +34,7 @@ mc_pos_control start
 
 mc_safe_control start
 
-# obstacle_aggregator start
+obstacle_aggregator start
 
 #
 # Start Multicopter Land Detector.
