@@ -90,7 +90,7 @@ void ObstacleAggregator::Run(){
 	tof_obstacles_chunk_s obs_chunk;
 	if (_tof_obstacles_chunk_sub.update(&obs_chunk))
 	{
-		if (obs_chunk.chunk_id == 0)
+		if ((obs_chunk.chunk_id == 0) || (obs_chunk.chunk_id < _prev_chunk_id))
 		{
 			_num_points_read = 0;
 		}
