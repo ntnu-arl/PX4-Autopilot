@@ -4,42 +4,13 @@
 #include <CBFSafetyFilter.hpp>
 
 void CBFSafetyFilter::updateObstacles() {
-    tof_obstacles_chunk_s tof_obstacles_chunk;
-    if (_tof_obstacles_chunk_sub.update(&tof_obstacles_chunk))
+    obstacles_s obs;
+    if (_obstacles_sub.update(&obs))
     {
-        _ts_obs = hrt_absolute_time();
-        // TODO make this part of the message
-        size_t max_chunk_size = 20;
-
-        // if we get a new pointcloud with fewer points than the previous, remove the overflow
-        for (size_t i = _obstacles.size() ; i >= tof_obstacles_chunk.num_points_total ; i--)
+        _obstacles.clear();
+        for (size_t i=0; i<obs.num_points; ++i)
         {
-            _obstacles.remove(i);
-        }
-
-        for (
-            size_t i_obs = tof_obstacles_chunk.chunk_id * max_chunk_size, i_chnk = 0 ;
-            i_chnk < tof_obstacles_chunk.num_points_chunk ;
-            i_obs++, i_chnk++
-        ) {
-            // if the obstacle array is already large enough, replace
-            if (i_obs < _obstacles.size())
-            {
-                _obstacles[i_obs] = Vector3f(
-                    tof_obstacles_chunk.points_x[i_chnk],
-                    tof_obstacles_chunk.points_y[i_chnk],
-                    tof_obstacles_chunk.points_z[i_chnk]
-                );
-            }
-            // else, pushback
-            else
-            {
-                _obstacles.push_back(Vector3f(
-                    tof_obstacles_chunk.points_x[i_chnk],
-                    tof_obstacles_chunk.points_y[i_chnk],
-                    tof_obstacles_chunk.points_z[i_chnk]
-                ));
-            }
+            _obstacles.push_back(Vector3f(obs.x[i], obs.y[i], obs.z[i]));
         }
     }
 }
@@ -56,10 +27,6 @@ void CBFSafetyFilter::updateAttitude() {
 void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& velocity) {
     if  (!_enabled) return;
     uint64_t tic = hrt_absolute_time();
-
-    // timeout obstacles
-    if (tic - _ts_obs > _obstacle_timeout)
-        _obstacles.clear();
 
     // pass through if no obstacles are recorded
     updateAttitude();
