@@ -45,7 +45,7 @@ using namespace time_literals;
 
 ObstacleAggregator::ObstacleAggregator() :
 	ModuleParams(nullptr),
-	WorkItem(MODULE_NAME, px4::wq_configurations::hp_default) {
+	WorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers) {
 	}
 
 bool ObstacleAggregator::init()
@@ -89,12 +89,21 @@ void ObstacleAggregator::Run(){
 	tof_obstacles_chunk_s obs_chunk{};
 	if (_tof_obstacles_chunk_sub.update(&obs_chunk))
 	{
+		if (obs_chunk.chunk_id - _prev_chunk_id != 1){
+			PX4_WARN("id: %u", obs_chunk.chunk_id);
+		}
+		// check if starting new group of chunks
 		if ((obs_chunk.chunk_id == 0) || (obs_chunk.chunk_id < _prev_chunk_id))
 		{
 			_num_points_read = 0;
 		}
 
-		// TODO: check if larger than size of obstacles
+		// check if limits exceeded
+		if (obs_chunk.num_points_total > _obstacles.MAX_OBSTACLES){
+			PX4_WARN("Obstacle chunk arrived with more than max obstacles: %u > %lu", _obstacles.MAX_OBSTACLES, obs_chunk.num_points_total);
+			return;
+		}
+
 		for (size_t i = 0; i < obs_chunk.num_points_chunk; ++i)
 		{
 			const size_t j = i + _num_points_read;

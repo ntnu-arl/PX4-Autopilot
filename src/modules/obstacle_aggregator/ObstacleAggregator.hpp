@@ -82,7 +82,7 @@ private:
 	uORB::Publication<obstacles_s>     _obstacles_pub{ORB_ID(obstacles)};
 
 	// perf_counter_t  _loop_perf;             /**< loop duration performance counter */
-	hrt_abstime _last_run{0};
+	hrt_abstime _prev_time{0};
 
 	obstacles_s _obstacles{};
 	uint8_t _num_points_read{0};
