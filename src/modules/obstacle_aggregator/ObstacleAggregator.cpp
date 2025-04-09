@@ -89,9 +89,9 @@ void ObstacleAggregator::Run(){
 	tof_obstacles_chunk_s obs_chunk{};
 	if (_tof_obstacles_chunk_sub.update(&obs_chunk))
 	{
-		if (obs_chunk.chunk_id - _prev_chunk_id != 1){
-			PX4_WARN("id: %u", obs_chunk.chunk_id);
-		}
+		// if (obs_chunk.chunk_id - _prev_chunk_id != 1){
+		// 	PX4_WARN("id: %u", obs_chunk.chunk_id);
+		// }
 		// check if starting new group of chunks
 		if ((obs_chunk.chunk_id == 0) || (obs_chunk.chunk_id < _prev_chunk_id))
 		{
