@@ -4,13 +4,14 @@
 #include <CBFSafetyFilter.hpp>
 
 void CBFSafetyFilter::updateObstacles() {
-    obstacles_s obs;
-    if (_obstacles_sub.update(&obs))
+    if (_obstacles_sub.update(&_obs_msg))
     {
+        _ts_obs = hrt_absolute_time();
+
         _obstacles.clear();
-        for (size_t i=0; i<obs.num_points; ++i)
+        for (uint8_t i=0; i<_obs_msg.num_points; ++i)
         {
-            _obstacles.push_back(Vector3f(obs.x[i], obs.y[i], obs.z[i]));
+            _obstacles.push_back(Vector3f(_obs_msg.x[i], _obs_msg.y[i], _obs_msg.z[i]));
         }
     }
 }
@@ -27,6 +28,13 @@ void CBFSafetyFilter::updateAttitude() {
 void CBFSafetyFilter::filter(Vector3f& acceleration_setpoint, const Vector3f& velocity) {
     if  (!_enabled) return;
     uint64_t tic = hrt_absolute_time();
+
+    // timeout obstacles
+    if (tic - _ts_obs > _obstacle_timeout)
+    {
+        PX4_WARN("CBF hit obstacle timeout, clearing _obstacles");
+        _obstacles.clear();
+    }
 
     // pass through if no obstacles are recorded
     updateAttitude();

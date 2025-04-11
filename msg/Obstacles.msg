@@ -1,5 +1,7 @@
 uint64 timestamp # time since system start (microseconds)
 uint8 num_points
-float32[200] x
-float32[200] y
-float32[200] z
+
+uint8 MAX_OBSTACLES = 100
+float32[100] x
+float32[100] y
+float32[100] z

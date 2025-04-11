@@ -6,3 +6,5 @@ uint32 num_points_total
 float32[20] points_x
 float32[20] points_y
 float32[20] points_z
+
+uint8 ORB_QUEUE_LENGTH = 5

@@ -40,7 +40,7 @@
 
 #pragma once
 
-#include <lib/perf/perf_counter.h>
+// #include <lib/perf/perf_counter.h>
 
 #include <px4_platform_common/px4_config.h>
 #include <px4_platform_common/defines.h>
@@ -59,7 +59,7 @@ class ObstacleAggregator : public ModuleBase<ObstacleAggregator>, public ModuleP
 {
 public:
 	ObstacleAggregator();
-	~ObstacleAggregator() override;
+	~ObstacleAggregator() override = default;
 
 	/** @see ModuleBase */
 	static int task_spawn(int argc, char *argv[]);
@@ -81,10 +81,10 @@ private:
 	uORB::SubscriptionCallbackWorkItem _tof_obstacles_chunk_sub{this, ORB_ID(tof_obstacles_chunk)};
 	uORB::Publication<obstacles_s>     _obstacles_pub{ORB_ID(obstacles)};
 
-	perf_counter_t  _loop_perf;             /**< loop duration performance counter */
-	hrt_abstime _last_run{0};
+	// perf_counter_t  _loop_perf;             /**< loop duration performance counter */
+	hrt_abstime _prev_time{0};
 
-	obstacles_s _obstacles;
-	uint16_t _num_points_read;
-	bool _prev_chunk_id{0};
+	obstacles_s _obstacles{};
+	uint8_t _num_points_read{0};
+	uint8_t _prev_chunk_id{0};
 };

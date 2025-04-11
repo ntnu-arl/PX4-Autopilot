@@ -41,16 +41,12 @@
 
 #include "ObstacleAggregator.hpp"
 
+using namespace time_literals;
+
 ObstacleAggregator::ObstacleAggregator() :
 	ModuleParams(nullptr),
-	WorkItem(MODULE_NAME, px4::wq_configurations::lp_default) {
-		_obstacles_pub.advertise();
+	WorkItem(MODULE_NAME, px4::wq_configurations::nav_and_controllers) {
 	}
-
-ObstacleAggregator::~ObstacleAggregator()
-{
-	perf_free(_loop_perf);
-}
 
 bool ObstacleAggregator::init()
 {
@@ -58,6 +54,8 @@ bool ObstacleAggregator::init()
 		PX4_ERR("callback registration failed");
 		return false;
 	}
+
+	_obstacles_pub.advertise();
 
 	return true;
 }
@@ -74,7 +72,8 @@ void ObstacleAggregator::Run(){
 		return;
 	}
 
-	perf_begin(_loop_perf);
+	// NOTE: perf seems to be a big part of causing crashes
+	// perf_begin(_loop_perf);
 
 	// // Check if parameters have changed
 	// if (_parameter_update_sub.updated()) {
@@ -87,15 +86,24 @@ void ObstacleAggregator::Run(){
 	// }
 
 	// run on new chunks available
-	tof_obstacles_chunk_s obs_chunk;
+	tof_obstacles_chunk_s obs_chunk{};
 	if (_tof_obstacles_chunk_sub.update(&obs_chunk))
 	{
+		// if (obs_chunk.chunk_id - _prev_chunk_id != 1){
+		// 	PX4_WARN("id: %u", obs_chunk.chunk_id);
+		// }
+		// check if starting new group of chunks
 		if ((obs_chunk.chunk_id == 0) || (obs_chunk.chunk_id < _prev_chunk_id))
 		{
 			_num_points_read = 0;
 		}
 
-		// TODO: read points
+		// check if limits exceeded
+		if (obs_chunk.num_points_total > _obstacles.MAX_OBSTACLES){
+			PX4_WARN("Obstacle chunk arrived with more than max obstacles: %u > %lu", _obstacles.MAX_OBSTACLES, obs_chunk.num_points_total);
+			return;
+		}
+
 		for (size_t i = 0; i < obs_chunk.num_points_chunk; ++i)
 		{
 			const size_t j = i + _num_points_read;
@@ -106,18 +114,19 @@ void ObstacleAggregator::Run(){
 		_num_points_read += obs_chunk.num_points_chunk;
 
 		// check if done
-		if (_num_points_read == static_cast<uint16_t>(obs_chunk.num_points_total))
+		if (_num_points_read == (uint8_t)obs_chunk.num_points_total)
 		{
 			// finished reading
 			_obstacles.timestamp = hrt_absolute_time();
 			_obstacles.num_points = _num_points_read;
 			_obstacles_pub.publish(_obstacles);
 		}
+		// TODO add logging
 
 		_prev_chunk_id = obs_chunk.chunk_id;
 	}
 
-	perf_end(_loop_perf);
+	// perf_end(_loop_perf);
 }
 
 int ObstacleAggregator::task_spawn(int argc, char *argv[])
@@ -159,6 +168,7 @@ int ObstacleAggregator::print_usage(const char *reason)
 ### Description
 This implements the obstacle aggregator. It takes obstacle chunks as inputs and
 outputs an obstacle message.
+
 )DESCR_STR");
 
 	// TODO check if print usage name correct
