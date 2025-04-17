@@ -120,6 +120,7 @@ private:
 
 	float _man_yaw_sp{0.f};                 /**< current yaw setpoint in manual mode */
 	float _man_tilt_max;                    /**< maximum tilt allowed for manual flight [rad] */
+	matrix::Quatf _q_rot_y;
 
 	SlewRate<float> _manual_throttle_minimum{0.f}; ///< 0 when landed and ramped to MPC_MANTHR_MIN in air
 	SlewRate<float> _manual_throttle_maximum{0.f}; ///< 0 when disarmed ramped to 1 when spooled up
@@ -146,6 +147,7 @@ private:
 
 		(ParamFloat<px4::params::MC_ROLL_P>)        _param_mc_roll_p,
 		(ParamFloat<px4::params::MC_PITCH_P>)       _param_mc_pitch_p,
+		(ParamFloat<px4::params::MC_PITCH_OFFSET>)  _param_mc_pitch_offset,
 		(ParamFloat<px4::params::MC_YAW_P>)         _param_mc_yaw_p,
 		(ParamFloat<px4::params::MC_YAW_WEIGHT>)    _param_mc_yaw_weight,
 

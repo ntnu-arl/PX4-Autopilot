@@ -84,6 +84,10 @@ px4_add_romfs_files(
 	4010_gz_x500_mono_cam
 	4011_gz_lawnmower
 
+	5001_gz_tinyprop
+	5002_gz_tinyprop_hvy
+	5003_gz_spear
+
 	6011_gazebo-classic_typhoon_h480
 	6011_gazebo-classic_typhoon_h480.post
 

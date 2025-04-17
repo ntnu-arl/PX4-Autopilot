@@ -66,6 +66,19 @@ PARAM_DEFINE_FLOAT(MC_ROLL_P, 6.5f);
 PARAM_DEFINE_FLOAT(MC_PITCH_P, 6.5f);
 
 /**
+ * Attitude Control Pitch Offset
+ *
+ * Pitch offset that the attitude controller use as horizon level
+ *
+ * @min -90
+ * @max 90
+ * @decimal 2
+ * @increment 0.1
+ * @group Multicopter Attitude Control
+ */
+PARAM_DEFINE_FLOAT(MC_PITCH_OFFSET, 0.0f);
+
+/**
  * Yaw P gain
  *
  * Yaw proportional gain, i.e. desired angular speed in rad/s for error 1 rad.

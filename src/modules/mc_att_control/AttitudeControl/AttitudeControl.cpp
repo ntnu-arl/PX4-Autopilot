@@ -71,7 +71,6 @@ matrix::Vector3f AttitudeControl::update(const Quatf &q) const
 		// transform rotation from current to desired thrust vector into a world frame reduced desired attitude
 		qd_red *= q;
 	}
-
 	// mix full and reduced desired attitude
 	Quatf q_mix = qd_red.inversed() * qd;
 	q_mix.canonicalize();

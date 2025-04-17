@@ -96,6 +96,9 @@ MulticopterAttitudeControl::parameters_updated()
 						radians(_param_mc_yawrate_max.get())));
 
 	_man_tilt_max = math::radians(_param_mpc_man_tilt_max.get());
+
+	_q_rot_y = matrix::Quatf(matrix::Eulerf(0.0f, -math::radians(_param_mc_pitch_offset.get()), 0.0f));
+
 }
 
 float
@@ -314,7 +317,7 @@ MulticopterAttitudeControl::Run()
 				_quat_reset_counter = v_att.quat_reset_counter;
 			}
 
-			Vector3f rates_sp = _attitude_control.update(q);
+			Vector3f rates_sp = _attitude_control.update(q*_q_rot_y);
 
 			const hrt_abstime now = hrt_absolute_time();
 			autotune_attitude_control_status_s pid_autotune;

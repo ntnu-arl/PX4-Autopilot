@@ -8,9 +8,6 @@ publications:
   - topic: /fmu/out/register_ext_component_reply
     type: px4_msgs::msg::RegisterExtComponentReply
 
-  - topic: /fmu/out/airspeed_validated
-    type: px4_msgs::msg::AirspeedValidated
-
   - topic: /fmu/out/arming_check_request
     type: px4_msgs::msg::ArmingCheckRequest
 
@@ -35,17 +32,14 @@ publications:
   - topic: /fmu/out/message_format_response
     type: px4_msgs::msg::MessageFormatResponse
 
-  - topic: /fmu/out/position_setpoint_triplet
-    type: px4_msgs::msg::PositionSetpointTriplet
-
   - topic: /fmu/out/sensor_combined
     type: px4_msgs::msg::SensorCombined
 
   - topic: /fmu/out/timesync_status
     type: px4_msgs::msg::TimesyncStatus
 
-  # - topic: /fmu/out/vehicle_angular_velocity
-  #   type: px4_msgs::msg::VehicleAngularVelocity
+  - topic: /fmu/out/vehicle_angular_velocity
+    type: px4_msgs::msg::VehicleAngularVelocity
 
   - topic: /fmu/out/vehicle_attitude
     type: px4_msgs::msg::VehicleAttitude
@@ -55,9 +49,6 @@ publications:
 
   - topic: /fmu/out/vehicle_command_ack
     type: px4_msgs::msg::VehicleCommandAck
-
-  - topic: /fmu/out/vehicle_global_position
-    type: px4_msgs::msg::VehicleGlobalPosition
 
   - topic: /fmu/out/vehicle_gps_position
     type: px4_msgs::msg::SensorGps
@@ -71,8 +62,8 @@ publications:
   - topic: /fmu/out/vehicle_status
     type: px4_msgs::msg::VehicleStatus
 
-  - topic: /fmu/out/vehicle_trajectory_waypoint_desired
-    type: px4_msgs::msg::VehicleTrajectoryWaypoint
+  - topic: /fmu/out/manual_control_setpoint
+    type: px4_msgs::msg::ManualControlSetpoint
 
 # Create uORB::Publication
 subscriptions:
@@ -106,20 +97,14 @@ subscriptions:
   - topic: /fmu/in/onboard_computer_status
     type: px4_msgs::msg::OnboardComputerStatus
 
-  - topic: /fmu/in/obstacle_distance
-    type: px4_msgs::msg::ObstacleDistance
-
-  - topic: /fmu/in/sensor_optical_flow
-    type: px4_msgs::msg::SensorOpticalFlow
-
-  - topic: /fmu/in/goto_setpoint
-    type: px4_msgs::msg::GotoSetpoint
-
   - topic: /fmu/in/telemetry_status
     type: px4_msgs::msg::TelemetryStatus
 
   - topic: /fmu/in/trajectory_setpoint
     type: px4_msgs::msg::TrajectorySetpoint
+
+  - topic: /fmu/in/position_setpoint
+    type: px4_msgs::msg::PositionSetpoint
 
   - topic: /fmu/in/vehicle_attitude_setpoint
     type: px4_msgs::msg::VehicleAttitudeSetpoint
@@ -130,9 +115,6 @@ subscriptions:
   - topic: /fmu/in/vehicle_rates_setpoint
     type: px4_msgs::msg::VehicleRatesSetpoint
 
-  - topic: /fmu/in/differential_drive_setpoint
-    type: px4_msgs::msg::DifferentialDriveSetpoint
-
   - topic: /fmu/in/vehicle_visual_odometry
     type: px4_msgs::msg::VehicleOdometry
 
@@ -142,26 +124,9 @@ subscriptions:
   - topic: /fmu/in/vehicle_command_mode_executor
     type: px4_msgs::msg::VehicleCommand
 
-  - topic: /fmu/in/vehicle_trajectory_bezier
-    type: px4_msgs::msg::VehicleTrajectoryBezier
-
-  - topic: /fmu/in/vehicle_trajectory_waypoint
-    type: px4_msgs::msg::VehicleTrajectoryWaypoint
-
-  - topic: /fmu/in/vehicle_thrust_setpoint
-    type: px4_msgs::msg::VehicleThrustSetpoint
-
-  - topic: /fmu/in/vehicle_torque_setpoint
-    type: px4_msgs::msg::VehicleTorqueSetpoint
-
   - topic: /fmu/in/actuator_motors
     type: px4_msgs::msg::ActuatorMotors
 
-  - topic: /fmu/in/actuator_servos
-    type: px4_msgs::msg::ActuatorServos
-
-  - topic: /fmu/in/aux_global_position
-    type: px4_msgs::msg::VehicleGlobalPosition
 
 # Create uORB::PublicationMulti
 subscriptions_multi:
