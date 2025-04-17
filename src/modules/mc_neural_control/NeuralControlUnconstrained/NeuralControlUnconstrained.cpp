@@ -69,7 +69,7 @@ NeuralControlUnconstrained::NeuralControlUnconstrained(int n_motors)
 
   try
   {
-    std::string path = "/home/philipp/Documents/AutonomousRobotics/PX4-Autopilot/model/etor_task_b/";
+    std::string path = "Insert PATH here";
     PX4_INFO("loading model files");
 
     _bias_control_net_layer_0 = openDataUnconstrained(path + "bias_control_net_layer_0.csv");
