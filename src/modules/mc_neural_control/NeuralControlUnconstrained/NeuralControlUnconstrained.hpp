@@ -60,6 +60,14 @@ public:
 
 private:
 
+  bool first_time_set = false;
+  long unsigned int goal_index;
+  Eigen::Vector3f starting_position_offset;
+  Eigen::Vector3f pos_state_w_starting_offset;
+  Eigen::Vector3f pos_setpoint;
+  Eigen::Vector3f pos_input;
+  Eigen::Vector3f pos_input_clamped;
+
   Eigen::VectorXf _bias_control_net_layer_0;
   Eigen::MatrixXf _weight_control_net_layer_0;
   Eigen::VectorXf _bias_control_net_layer_1;

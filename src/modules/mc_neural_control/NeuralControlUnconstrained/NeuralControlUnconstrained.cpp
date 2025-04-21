@@ -69,9 +69,12 @@ NeuralControlUnconstrained::NeuralControlUnconstrained(int n_motors)
 
   try
   {
-    std::string path = "Insert PATH here";
-    PX4_INFO("loading model files");
+    first_time_set = false;
+    starting_position_offset = Eigen::Vector3f::Constant(std::numeric_limits<float>::quiet_NaN());
+    goal_index = 0;
 
+    std::string path = "/home/paran/Documents/welf_hovers/Torch_to_Eigen/save_model/model_files/etor_task_b/";
+    PX4_INFO("loading model files");
     _bias_control_net_layer_0 = openDataUnconstrained(path + "bias_control_net_layer_0.csv");
     _weight_control_net_layer_0 = openDataUnconstrained(path + "weight_control_net_layer_0.csv");
     _bias_control_net_layer_1 = openDataUnconstrained(path + "bias_control_net_layer_1.csv");
@@ -113,6 +116,7 @@ NeuralControlUnconstrained::NeuralControlUnconstrained(int n_motors)
     _frame_transf_2(2, 1) = 0.0f;
     _frame_transf_2(2, 2) = 1.0f;
 
+
   }
   catch (const std::exception &e)
   {
@@ -139,7 +143,33 @@ void NeuralControlUnconstrained::fillDebugMessage(neural_control_s &message)
 matrix::Vector<float,6> NeuralControlUnconstrained::updateNeural()
 {
 
-  // transform observations in correct frame
+  Eigen::Vector3f desired_starting_position(-0.5f, 0.0f, 0.0f);
+  std::vector<Vector3f> goals_list = {
+    Vector3f(0.0f, 0.0f, 0.0f),
+    Vector3f(0.25f, 0.0f, 0.0f),
+    Vector3f(0.5f, 0.0f, 0.0f),
+    Vector3f(0.75f, 0.0f, 0.0f),
+    Vector3f(1.0f, 0.6145519614219666f, 0.03982148319482803f),
+    Vector3f(1.25f, 0.6145519614219666f, 0.03982148319482803f),
+    Vector3f(1.5f, 0.6145519614219666f, 0.03982148319482803f),
+    Vector3f(1.75f, 0.6145519614219666f, 0.03982148319482803f),
+    Vector3f(2.0f, 0.6145519614219666f, 0.03982148319482803f),
+    Vector3f(2.25f, 0.6145519614219666f, 0.03982148319482803f),
+    Vector3f(2.5f, 0.6145519614219666f, 0.03982148319482803f),
+    Vector3f(2.75f, 0.6145519614219666f, 0.03982148319482803f),
+    Vector3f(3.0f, 0.6145519614219666f, 0.03982148319482803f),
+    Vector3f(3.25f, -0.013058841228485107f, 0.06924483180046082f),
+    Vector3f(3.5f, -0.013058841228485107f, 0.06924483180046082f),
+    Vector3f(3.75f, -0.013058841228485107f, 0.06924483180046082f),
+    Vector3f(4.0f, -0.013058841228485107f, 0.06924483180046082f),
+    Vector3f(4.25f, -0.5529854893684387f, 0.0442693829536438f),
+    Vector3f(4.5f, -0.5529854893684387f, 0.0442693829536438f),
+    Vector3f(4.75f, -0.5529854893684387f, 0.0442693829536438f),
+    Vector3f(5.0f, -0.5529854893684387f, 0.0442693829536438f),
+    Vector3f(5.25f, -0.5529854893684387f, 0.0442693829536438f)
+  };
+
+
   Vector3f position_local;
   position_local = _frame_transf *  _frame_transf_2 *  _position;
 
@@ -158,16 +188,37 @@ matrix::Vector<float,6> NeuralControlUnconstrained::updateNeural()
 
   Vector3f angular_vel_local = _frame_transf * _angular_velocity;
 
-  // get state positions
   Eigen::Vector3f pos_state;
   pos_state << position_local(0), position_local(1), position_local(2);
-  Eigen::Vector3f pos_setpoint;
-  pos_setpoint << position_setpoint_local(0), position_setpoint_local(1), position_setpoint_local(2);
 
-  Eigen::Vector3f pos_input = pos_setpoint - pos_state;
 
-  // clamp error to guarantee input lies in training envelope
-  Eigen::Vector3f pos_input_clamped = pos_input; //.cwiseMax(-1.).cwiseMin(1.);
+
+  if (!first_time_set){
+    starting_position_offset = pos_state - desired_starting_position;
+    first_time_set = true;
+  }
+
+  if (starting_position_offset.array().isNaN().any()) {
+    PX4_ERR("starting_position_offset contains NaN, crashing.");
+    std::cerr << "Error: starting_position_offset is NaN. Exiting." << std::endl;
+    exit(EXIT_FAILURE);
+  }
+
+  pos_state_w_starting_offset = pos_state - starting_position_offset;
+
+  if (goals_list[goal_index](0) < pos_state_w_starting_offset(0))
+  {
+    if (goal_index < goals_list.size()-1)
+    {
+      goal_index++;
+    }
+  }
+
+  pos_setpoint << goals_list[goal_index](0), goals_list[goal_index](1), goals_list[goal_index](2);
+  PX4_INFO("Updated pos_setpoint: %f %f %f", double(pos_setpoint(0)), double(pos_setpoint(1)), double(pos_setpoint(2)));
+
+  pos_input = pos_setpoint - pos_state_w_starting_offset;
+  pos_input_clamped = pos_input; // no clamping for now
 
   // convert linear velocities
   Eigen::Vector3f vel_state;
@@ -224,7 +275,7 @@ matrix::Vector<float,6> NeuralControlUnconstrained::updateNeural()
   motor_commands(4) = (rpm(4) * 2 - _max_rpm - _min_rpm) / (_max_rpm - _min_rpm);
   motor_commands(5) = (rpm(1) * 2 - _max_rpm - _min_rpm) / (_max_rpm - _min_rpm);
 
-  PX4_INFO("commands %f %f %f %f %f %f", double(motor_commands(0)), double(motor_commands(1)), double(motor_commands(2)), double(motor_commands(3)), double(motor_commands(4)), double(motor_commands(5)));
+  // PX4_INFO("commands %f %f %f %f %f %f", double(motor_commands(0)), double(motor_commands(1)), double(motor_commands(2)), double(motor_commands(3)), double(motor_commands(4)), double(motor_commands(5)));
 
   matrix::Vector<float,6> mixer_values;
 
@@ -239,6 +290,26 @@ matrix::Vector<float,6> NeuralControlUnconstrained::updateNeural()
   {
     mixer_values(i) = a * (((motor_commands(i) + 1.0f) / 2.0f + tmp1) * ((motor_commands(i) + 1.0f) / 2.0f + tmp1) - tmp2);
   }
+
+  // std::string poses_log_file_path = "/home/paran/Dropbox/NTNU/11_constraints_encoding/code/poses_gz.txt";
+  // {
+  //   std::ofstream ofs(poses_log_file_path, std::ios::app);
+  //   Eigen::Matrix3f attitudeMat;
+  //   for (int i = 0; i < 3; i++) {
+  //       for (int j = 0; j < 3; j++) {
+  //           attitudeMat(i, j) = _attitude_local_mat(i, j);
+  //       }
+  //   }
+  //   Eigen::Quaternionf q(attitudeMat);
+  //   ofs << "{'position': [" << pos_state_w_starting_offset(0) << ", " << pos_state_w_starting_offset(1) << ", " << pos_state_w_starting_offset(2) << "], 'orientation': ["
+  //     << q.x() << ", " << q.y() << ", " << q.z() << ", " << q.w() << "], 'velocity': ["
+  //     << linear_velocity_local(0) << ", " << linear_velocity_local(1) << ", " << linear_velocity_local(2) << "], 'angular_velocity': ["
+  //     << angular_vel_local(0) << ", " << angular_vel_local(1) << ", " << angular_vel_local(2) << "], 'actions': ["
+  //     << motor_commands(0) << ", " << motor_commands(1) << ", " << motor_commands(2) << ", " << motor_commands(3) << ", " << motor_commands(4) << ", " << motor_commands(5) << "], 'target': ["
+  //     << pos_setpoint(0) << ", " << pos_setpoint(1) << ", " << pos_setpoint(2) << "], 'error': ["
+  //     << (pos_setpoint(0)-pos_state(0)) << ", " << (pos_setpoint(1)-pos_state(1)) << ", " << (pos_setpoint(2)-pos_state(2)) << "]}" << std::endl;
+  //   ofs.flush();
+  // }
 
   return mixer_values;
 }
